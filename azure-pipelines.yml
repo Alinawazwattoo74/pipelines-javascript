@@ -3,7 +3,6 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
-
 stages:
 - stage: Build
   displayName: Build stage
@@ -30,3 +29,26 @@ stages:
         replaceExistingArchive: true
     - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
       artifact: drop
+
+- stage: Deploy
+  displayName: Deployment stage
+  dependsOn: Build
+  jobs:
+  - deployment: VMDeploy
+    displayName: Web deploy
+    environment:
+      name: Linux-Environment
+      resourceType: VirtualMachine
+      tags: web1 # Update or remove value to match your tag
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: ExtractFiles@1
+            inputs:
+              archiveFilePatterns: '**/*.zip'
+              destinationFolder: '$(System.DefaultWorkingDirectory)/deploy'
+          # Add steps for deploying to your virtual machine here
+
